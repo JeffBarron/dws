@@ -48,8 +48,7 @@ def saveashtml():
       print("OSERROR:", err)
 
 
-    except ValueError as valerr:
-      print("ValueError:", valerr)
+
 
 logo = r"""
 
@@ -75,6 +74,18 @@ ___________ _/  |_|  |__
      \/     \/     \/                       \/     
 
 """
+def search(searchquery, theresults):
+    """sends get requests and returns the results"""
+   # global r
+    try:
+
+        r = session.get(querystring)
+        theresults= r.text
+    except:
+
+        print("Something fucked up.")
+    return r.text
+
 parser = argparse.ArgumentParser(description="DWS: Dark Web Search")
 parser.add_argument("-q", "--query", type=str, help="Search with keywords")
 parser.add_argument("-5", "--html", help="Save the results into an html file", action="store_true")
@@ -87,31 +98,52 @@ session.proxies['http'] = 'socks5h://localhost:9050'
 
 session.proxies['https'] = 'socks5h://localhost:9050'
 
-#header['User-agent'] = "Mozilla Firefox"
+
+
+#Change user agent so ahmia doesn't think we are doing a mitm scam
+
+requests.utils.default_user_agent('Mozilla Firefox')
+headers = {
+    'User-Agent': 'Mozilla/5.0 (Android 4.4; Mobile; rv:41.0) Gecko/41.0 Firefox/41.0',
+}
 
 if args.query == None:
 
-    print("Welcome to CPSDWS. Enter your search keywords:")
+    print("Welcome to CPSDWS.")
 
-    query=raw_input()
+    query=raw_input("Enter your keywords:")
 
     print("Input received. Requesting. This takes a bit. Like forever.")
     querystring = 'http://msydqstlz2kzerdg.onion/search/?q=' + query
 if args.query is not None:
-
+    print("Input received.")
+    print("Searching TOR via Ahmia.")
     querystring='http://msydqstlz2kzerdg.onion/search/?q='+query
+    i2pquerystring='https://ahmia.fi/search/i2p/?q='+query
+if query is not None:
+    i2pquerystring = 'https://ahmia.fi/search/i2p/?q=' + query
+    try:
+        print("Querying Ahmia TOR...")
+        r = session.get(querystring, headers=headers)
 
-try:
+    except ValueError as valerr:
+      print("ValueError:", valerr)
+    except:
 
-    r = session.get(querystring)
+        print("Something fucked up.")
+        exit(1)
 
-except:
+    try:
+        print("Searching I2P on Ahmia.")
+        i2prequest = session.get(i2pquerystring, headers=headers)
 
-    print("Something fucked up.")
+    except:
 
+        print("Something fucked up.")
+        exit(1)
 # render html to console
 results = html2text.html2text(r.text)
-
+results+= html2text.html2text(i2prequest.text)
 print results
 
 #save results
