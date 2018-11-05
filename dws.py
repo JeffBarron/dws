@@ -1,8 +1,14 @@
 #!/usr/bin/python2
 # Author = Jeff Barron
 # Critical Path Security Dark Web Search
+# dws searches tor, i2p and pastebins
 
-#todo add i2p search
+#todo add multithreading so all requests occur concurrently
+#todo rewrite to use a function and a list of sites, add haystack http://haystakvxad7wbk5.onion/?q=
+#todo add OnionLand search http://3bbaaaccczcbdddz.onion/search?q=
+#todo fix pastebin.com https://pastebin.com/search?q=sunlakes11%40gmail.com use burp to check for post request
+#http://xmh57jrzrnw6insl.onion/4a1f6b371c/search.cgi?s=DRP&q=0+day+exploit&cmd=Search%21
+
 
 import requests
 import html2text
@@ -37,7 +43,7 @@ def saveashtml():
     try:
      writedis = results.encode('utf-8')
      fo = open("cpsdarkwebsearchresults.html", "w")
-     fo.write(r.text)
+     fo.write(writedis)
      fo.close()
      print(OKGREEN + "cpsdarkwebsearchresults.html successfully created." + ENDC)
 
@@ -76,14 +82,14 @@ ___________ _/  |_|  |__
 """
 def search(searchquery, theresults):
     """sends get requests and returns the results"""
-   # global r
+    global r
     try:
 
         r = session.get(querystring)
         theresults= r.text
     except:
 
-        print("Something fucked up.")
+        print("Something fudged up.")
     return r.text
 
 parser = argparse.ArgumentParser(description="DWS: Dark Web Search")
@@ -107,21 +113,31 @@ headers = {
     'User-Agent': 'Mozilla/5.0 (Android 4.4; Mobile; rv:41.0) Gecko/41.0 Firefox/41.0',
 }
 
-if args.query == None:
+if args.query is None:
 
-    print("Welcome to CPSDWS.")
+    print("Welcome to CPS DWS.")
 
     query=raw_input("Enter your keywords:")
 
     print("Input received. Requesting. This takes a bit. Like forever.")
     querystring = 'http://msydqstlz2kzerdg.onion/search/?q=' + query
-if args.query is not None:
+if args.query is not None: #used the command line option to query
     print("Input received.")
     print("Searching TOR via Ahmia.")
-    querystring='http://msydqstlz2kzerdg.onion/search/?q='+query
-    i2pquerystring='https://ahmia.fi/search/i2p/?q='+query
-if query is not None:
+
+    querystring='http://msydqstlz2kzerdg.onion/search/?q='+ query
+    i2pquerystring='https://ahmia.fi/search/i2p/?q='+ query
+    haystackquery='http://haystakvxad7wbk5.onion/?q=' + query
+    onionlandquery = 'http://3bbaaaccczcbdddz.onion/search?q=' + query
+    torchquery = 'http://xmh57jrzrnw6insl.onion/4a1f6b371c/search.cgi?s=DRP&q=' + query + '&cmd=Search%21'
+    pastebinquery='https://pastebin.com/search?q='+ query
+if query is not None: #should always be true
     i2pquerystring = 'https://ahmia.fi/search/i2p/?q=' + query
+    haystackquery = 'http://haystakvxad7wbk5.onion/?q=' + query
+    onionlandquery = 'http://3bbaaaccczcbdddz.onion/search?q=' + query
+    torchquery = 'http://xmh57jrzrnw6insl.onion/4a1f6b371c/search.cgi?s=DRP&q=' + query + '&cmd=Search%21&form=extended'
+    pastebinquery = 'https://pastebin.com/search?q=' + query
+
     try:
         print("Querying Ahmia TOR...")
         r = session.get(querystring, headers=headers)
@@ -130,21 +146,75 @@ if query is not None:
       print("ValueError:", valerr)
     except:
 
-        print("Something fucked up.")
+        print("Something fudged up.")
         exit(1)
 
     try:
-        print("Searching I2P on Ahmia.")
+        print("Searching Ahmia on I2P...")
         i2prequest = session.get(i2pquerystring, headers=headers)
 
     except:
 
-        print("Something fucked up.")
+        print("Something fudged up.")
+        exit(1)
+
+    try:
+        print("Searching Haystack on TOR...")
+
+        haystackrequest = session.get(haystackquery, headers=headers)
+
+    except:
+
+        print("Something fudged up.")
+        exit(1)
+
+
+    try:
+        print("Searching Onionland on TOR...")
+
+        onionlandrequest = session.get(onionlandquery, headers=headers)
+
+    except:
+
+        print("Something fudged up.")
+        exit(1)
+
+    try:
+        print("Searching Torch on TOR...")
+
+
+        torchrequest = session.get(torchquery, headers=headers)
+
+    except:
+
+        print("Something fudged up.")
+        exit(1)
+
+    try:
+        print("Searching Pastebin.com...")
+        #remove tor proxy so pastebin won't throw a captcha at us
+        session.proxies['https'] = ''
+        pasterequest = session.get(pastebinquery, headers=headers)
+
+    except:
+
+        print("Something fudged up.")
         exit(1)
 # render html to console
 results = html2text.html2text(r.text)
+results+="*****************************BEGIN Ahmia i2P*****************************"
 results+= html2text.html2text(i2prequest.text)
+results+="*****************************BEGIN HAYSTACK*****************************"
+results+=html2text.html2text(haystackrequest.text)
+results+="*****************************BEGIN ONIONLAND*****************************"
+results+= html2text.html2text(onionlandrequest.text)
+results+="*****************************BEGIN ToRCH*****************************"
+results+= html2text.html2text(torchrequest.text)
+results+="*****************************BEGIN PASTEBiN*****************************"
+results+= html2text.html2text(pasterequest.text)
 print results
+
+
 
 #save results
 saveastext()
