@@ -1,6 +1,6 @@
 #!/usr/bin/python2
 # Author = Jeff Barron
-# Critical Path Security Dark Web Search
+# Critical Path Security osint tool for Dark Web Search
 # dws searches tor, i2p and pastebins
 
 #todo add multithreading so all requests occur concurrently
@@ -93,7 +93,7 @@ def search(searchquery, theresults):
     return r.text
 
 parser = argparse.ArgumentParser(description="DWS: Dark Web Search")
-parser.add_argument("-q", "--query", type=str, help="Search with keywords")
+parser.add_argument("-q", "--query", type=str, nargs='+', help="Search with keywords")
 parser.add_argument("-5", "--html", help="Save the results into an html file", action="store_true")
 args=parser.parse_args()
 
@@ -122,24 +122,28 @@ if args.query is None:
     print("Input received. Requesting. This takes a bit. Like forever.")
     querystring = 'http://msydqstlz2kzerdg.onion/search/?q=' + query
 if args.query is not None: #used the command line option to query
-    print("Input received.")
+    print("Command line input received.")
     print("Searching TOR via Ahmia.")
-
+    query=' '.join(args.query)
+    print(args.query)
+    print query
     querystring='http://msydqstlz2kzerdg.onion/search/?q='+ query
     i2pquerystring='https://ahmia.fi/search/i2p/?q='+ query
     haystackquery='http://haystakvxad7wbk5.onion/?q=' + query
     onionlandquery = 'http://3bbaaaccczcbdddz.onion/search?q=' + query
-    torchquery = 'http://xmh57jrzrnw6insl.onion/4a1f6b371c/search.cgi?s=DRP&q=' + query + '&cmd=Search%21'
-    pastebinquery='https://pastebin.com/search?q='+ query
+    torchquery = 'http://xmh57jrzrnw6insl.onion/4a1f6b371c/search.cgi?s=DRP&q=' + query + '&cmd=Search%21&form=extended'
+    notevilquery = 'http://hss3uro2hsxfogfq.onion/index.php?q=' + query
+   # pastebinquery='https://pastebin.com/search?q='+ query
 if query is not None: #should always be true
     i2pquerystring = 'https://ahmia.fi/search/i2p/?q=' + query
     haystackquery = 'http://haystakvxad7wbk5.onion/?q=' + query
     onionlandquery = 'http://3bbaaaccczcbdddz.onion/search?q=' + query
     torchquery = 'http://xmh57jrzrnw6insl.onion/4a1f6b371c/search.cgi?s=DRP&q=' + query + '&cmd=Search%21&form=extended'
-    pastebinquery = 'https://pastebin.com/search?q=' + query
+    notevilquery = 'http://hss3uro2hsxfogfq.onion/index.php?q=' + query
+    #pastebinquery = 'https://pastebin.com/search?q=' + query
 
     try:
-        print("Querying Ahmia TOR...")
+        print("Searching Ahmia on TOR...")
         r = session.get(querystring, headers=headers)
 
     except ValueError as valerr:
@@ -191,15 +195,25 @@ if query is not None: #should always be true
         exit(1)
 
     try:
-        print("Searching Pastebin.com...")
-        #remove tor proxy so pastebin won't throw a captcha at us
-        session.proxies['https'] = ''
-        pasterequest = session.get(pastebinquery, headers=headers)
+        print("Searching Notevil on TOR...")
+
+
+        notevilrequest = session.get(notevilquery, headers=headers)
 
     except:
 
         print("Something fudged up.")
         exit(1)
+   # try:
+    #    print("Searching Pastebin.com...")
+        #remove tor proxy so pastebin won't throw a captcha at us
+     #   session.proxies['https'] = ''
+     #   pasterequest = session.get(pastebinquery, headers=headers)
+
+    #except:
+
+     #   print("Something fudged up.")
+      #  exit(1)
 # render html to console
 results = html2text.html2text(r.text)
 results+="*****************************BEGIN Ahmia i2P*****************************"
@@ -210,8 +224,10 @@ results+="*****************************BEGIN ONIONLAND**************************
 results+= html2text.html2text(onionlandrequest.text)
 results+="*****************************BEGIN ToRCH*****************************"
 results+= html2text.html2text(torchrequest.text)
-results+="*****************************BEGIN PASTEBiN*****************************"
-results+= html2text.html2text(pasterequest.text)
+results+="*****************************BEGIN Notevil*****************************"
+results+= html2text.html2text(notevilrequest.text)
+#results+="*****************************BEGIN PASTEBiN*****************************"
+#results+= html2text.html2text(pasterequest.text)
 print results
 
 
