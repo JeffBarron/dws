@@ -2,19 +2,24 @@
 # Author = Jeff Barron
 # Critical Path Security osint tool for Dark Web Search
 # dws searches tor, i2p and pastebins
-
+#dws assumes you have tor installed and running on the default port
+#if this is wrong then you will get a lot of errors when running.
+#
 #todo add multithreading so all requests occur concurrently
-#todo rewrite to use a function and a list of sites, add haystack http://haystakvxad7wbk5.onion/?q=
+#http://zlal32teyptf4tvi.onion/?rep=n%2Fa&search=   +'&submit=Go+>>>'
 #todo add OnionLand search http://3bbaaaccczcbdddz.onion/search?q=
-#todo fix pastebin.com https://pastebin.com/search?q=sunlakes11%40gmail.com use burp to check for post request
+#todo fix pastebin.com use burp to check for post request
 #http://xmh57jrzrnw6insl.onion/4a1f6b371c/search.cgi?s=DRP&q=0+day+exploit&cmd=Search%21
-
-
+# http://5plvrsgydwy2sgce.onion/?q=gin%20and%20juice&categories=general&language=en-US
+#http://zqktlwi4fecvo6ri.onion/wiki/index.php?title=Special%3ASearch&profile=all&search=yo+search &fulltext=Search
 import requests
 import html2text
-
+import logging
 import argparse
 
+#Save date/time with logging messages
+logging.basicConfig(format='%(asctime)s %(message)s')
+logging.basicConfig(filename='dws.log', level=logging.DEBUG)
 WARNING = '\033[93m'
 FAILRED = '\033[91m'
 OKGREEN = '\033[92m'
@@ -80,6 +85,8 @@ ___________ _/  |_|  |__
      \/     \/     \/                       \/     
 
 """
+
+print(OKGREEN + logo + ENDC)
 def search(searchquery, theresults):
     """sends get requests and returns the results"""
     global r
@@ -115,7 +122,7 @@ headers = {
 
 if args.query is None:
 
-    print("Welcome to CPS DWS.")
+    print("Welcome to CPS Dark Web Search.")
 
     query=raw_input("Enter your keywords:")
 
@@ -134,6 +141,11 @@ if args.query is not None: #used the command line option to query
     torchquery = 'http://xmh57jrzrnw6insl.onion/4a1f6b371c/search.cgi?s=DRP&q=' + query + '&cmd=Search%21&form=extended'
     notevilquery = 'http://hss3uro2hsxfogfq.onion/index.php?q=' + query
    # pastebinquery='https://pastebin.com/search?q='+ query
+    freshonionquery='http://zlal32teyptf4tvi.onion/?rep=n%2Fa&search=' + query + '&submit=Go+>>>'
+    searxquery='http://5plvrsgydwy2sgce.onion/?q=' + query + '&categories=general&language=en-US'
+    hiddenwikiquery='http://zqktlwi4fecvo6ri.onion/wiki/index.php?title=Special%3ASearch&profile=all&search=' + query + '&fulltext=Search'
+    print("DEBUG: First set of query strings built.")
+    logging.debug('First set of query strings assigned')
 if query is not None: #should always be true
     i2pquerystring = 'https://ahmia.fi/search/i2p/?q=' + query
     haystackquery = 'http://haystakvxad7wbk5.onion/?q=' + query
@@ -141,7 +153,9 @@ if query is not None: #should always be true
     torchquery = 'http://xmh57jrzrnw6insl.onion/4a1f6b371c/search.cgi?s=DRP&q=' + query + '&cmd=Search%21&form=extended'
     notevilquery = 'http://hss3uro2hsxfogfq.onion/index.php?q=' + query
     #pastebinquery = 'https://pastebin.com/search?q=' + query
-
+    freshonionquery = 'http://zlal32teyptf4tvi.onion/?rep=n%2Fa&search=' + query + '&submit=Go+>>>'
+    searxquery = 'http://5plvrsgydwy2sgce.onion/?q=' + query + '&categories=general&language=en-US'
+    hiddenwikiquery = 'http://zqktlwi4fecvo6ri.onion/wiki/index.php?title=Special%3ASearch&profile=all&search=' + query + '&fulltext=Search'
     try:
         print("Searching Ahmia on TOR...")
         r = session.get(querystring, headers=headers)
@@ -204,6 +218,38 @@ if query is not None: #should always be true
 
         print("Something fudged up.")
         exit(1)
+
+
+    try:
+        print("Searching Fresh Onions on TOR...")
+
+
+        freshonionrequest = session.get(freshonionquery, headers=headers)
+
+    except:
+
+        print("Something fudged up.")
+        exit(1)
+
+    try:
+            print("Searching searx on TOR...")
+
+            searxrequest = session.get(searxquery, headers=headers)
+
+    except:
+
+            print("Something fudged up.")
+            exit(1)
+
+    try:
+            print("Searching HiddenWiki on TOR...")
+
+            hiddenwikirequest = session.get(hiddenwikiquery, headers=headers)
+
+    except:
+
+            print("Something fudged up.")
+            exit(1)
    # try:
     #    print("Searching Pastebin.com...")
         #remove tor proxy so pastebin won't throw a captcha at us
@@ -226,6 +272,12 @@ results+="*****************************BEGIN ToRCH*****************************"
 results+= html2text.html2text(torchrequest.text)
 results+="*****************************BEGIN Notevil*****************************"
 results+= html2text.html2text(notevilrequest.text)
+results+="*****************************BEGIN FRESH ONiONS*****************************"
+results+= html2text.html2text(freshonionrequest.text)
+results+="*****************************BEGIN SEARX*****************************"
+results+= html2text.html2text(searxrequest.text)
+results+="*****************************BEGIN THE HIDDEN WIKI*****************************"
+results+= html2text.html2text(hiddenwikirequest.text)
 #results+="*****************************BEGIN PASTEBiN*****************************"
 #results+= html2text.html2text(pasterequest.text)
 print results
