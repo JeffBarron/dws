@@ -28,10 +28,10 @@ ENDC = '\033[0m'
 def saveastext():
     try:
      writedis=results.encode('utf-8')
-     fo = open("cpsdarkwebsearchresults.txt", "w")
+     fo = open("DWSresults.txt", "w")
      fo.write(writedis)
      fo.close()
-     print(OKGREEN + "cpsdarkwebsearchresults.txt successfully created." + ENDC)
+     print("DWSresults.txt successfully created.")
     except TypeError as foob:
         print('TypeError:', foob)
 
@@ -45,12 +45,32 @@ def saveastext():
 
 
 def saveashtml():
+    htmlresults = r.text
+    htmlresults+="*****************************BEGIN Ahmia i2P*****************************"
+    htmlresults+= i2prequest.text
+    htmlresults+="*****************************BEGIN HAYSTACK*****************************"
+    htmlresults+= haystackrequest.text
+    htmlresults+="*****************************BEGIN ONIONLAND*****************************"
+    htmlresults+= onionlandrequest.text
+    htmlresults+="*****************************BEGIN ToRCH*****************************"
+    htmlresults+= torchrequest.text
+    htmlresults+="*****************************BEGIN Notevil*****************************"
+    htmlresults+= notevilrequest.text
+   # htmlresults+="*****************************BEGIN FRESH ONiONS*****************************"
+   # htmlresults+= freshonionrequest.text
+    htmlresults+="*****************************BEGIN SEARX*****************************"
+    htmlresults+= searxrequest.text
+    htmlresults+="*****************************BEGIN THE HIDDEN WIKI*****************************"
+    htmlresults+= hiddenwikirequest.text
+
+
+
     try:
-     writedis = results.encode('utf-8')
-     fo = open("cpsdarkwebsearchresults.html", "w")
+     writedis = htmlresults.encode('utf-8')
+     fo = open("DWSresults.html", "w")
      fo.write(writedis)
      fo.close()
-     print(OKGREEN + "cpsdarkwebsearchresults.html successfully created." + ENDC)
+     print(OKGREEN + "DWSresults.html successfully created." + ENDC)
 
     except TypeError as foob:
         print('TypeError:', foob)
@@ -221,10 +241,10 @@ if query is not None: #should always be true
 
 
     try:
-        print("Searching Fresh Onions on TOR...")
+        print("Searching Fresh Onions[disabled] on TOR...")
 
 
-        freshonionrequest = session.get(freshonionquery, headers=headers)
+ #       freshonionrequest = session.get(freshonionquery, headers=headers)
 
     except:
 
@@ -261,6 +281,9 @@ if query is not None: #should always be true
      #   print("Something fudged up.")
       #  exit(1)
 # render html to console
+
+saveashtml()
+
 results = html2text.html2text(r.text)
 results+="*****************************BEGIN Ahmia i2P*****************************"
 results+= html2text.html2text(i2prequest.text)
@@ -272,8 +295,8 @@ results+="*****************************BEGIN ToRCH*****************************"
 results+= html2text.html2text(torchrequest.text)
 results+="*****************************BEGIN Notevil*****************************"
 results+= html2text.html2text(notevilrequest.text)
-results+="*****************************BEGIN FRESH ONiONS*****************************"
-results+= html2text.html2text(freshonionrequest.text)
+#results+="*****************************BEGIN FRESH ONiONS*****************************"
+#results+= html2text.html2text(freshonionrequest.text)
 results+="*****************************BEGIN SEARX*****************************"
 results+= html2text.html2text(searxrequest.text)
 results+="*****************************BEGIN THE HIDDEN WIKI*****************************"
@@ -284,7 +307,8 @@ print results
 
 
 
-#save results
+#save results and default save to html regardless of cli options
 saveastext()
+
 if args.html == True:
     saveashtml()
